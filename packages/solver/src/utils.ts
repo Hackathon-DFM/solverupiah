@@ -16,7 +16,7 @@ import readline from 'readline';
 import fs from 'fs/promises';
 
 import { privateKeyToAccount } from 'viem/accounts';
-import { arbitrumSepolia, baseSepolia } from 'viem/chains';
+import { arbitrumSepolia, baseSepolia, liskSepolia } from 'viem/chains';
 import { SOLVER_PK } from './config';
 
 // ████ Common █████████████████████████████████████████████████████████████████
@@ -33,6 +33,16 @@ export function createClient(chainId: bigint) {
     });
     publicClient = createPublicClient({
       chain: arbitrumSepolia,
+      transport: http(),
+    });
+  } else if (chainId === 4202n) {
+    walletClient = createWalletClient({
+      account: walletAccount,
+      chain: liskSepolia,
+      transport: http(),
+    });
+    publicClient = createPublicClient({
+      chain: liskSepolia,
       transport: http(),
     });
   } else if (chainId === 84532n) {
