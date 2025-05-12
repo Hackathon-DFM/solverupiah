@@ -1,4 +1,4 @@
-import { arbitrumSepolia, baseSepolia } from 'viem/chains';
+import { arbitrumSepolia, liskSepolia } from 'viem/chains';
 import { openIntentListener } from './listener';
 import { createPublicClient, http, PublicClient } from 'viem';
 import { openIntentSolver } from './solver';
@@ -9,15 +9,15 @@ async function main() {
       chain: arbitrumSepolia,
       transport: http(),
     }) as PublicClient,
-    contractAddress: '0x576ba9ea0dc68f8b18ff8443a1d0aa1425459ef5',
+    contractAddress: '0x1EeaF4f3b82b4f6BbF968B2dAE9Fb60edD1b6Ede',
     solver: openIntentSolver,
   });
   openIntentListener({
     publicClient: createPublicClient({
-      chain: baseSepolia,
+      chain: liskSepolia,
       transport: http(),
     }) as PublicClient,
-    contractAddress: '0xabb2e3cc9ef0c41f3c076afd2701684f8418e7d8',
+    contractAddress: '0x8Bbe61f95364FEa284C6c01866dfe9D513f1E456',
     solver: openIntentSolver,
   });
 }
