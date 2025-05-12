@@ -1,0 +1,6 @@
+forge-std/=lib/forge-std/src/
+@openzeppelin/=node_modules/@openzeppelin/
+@hyperlane-xyz/=node_modules/@hyperlane-xyz/core/contracts/
+contracts/=node_modules/@hyperlane-xyz/core/contracts/
+@uniswap/=node_modules/@uniswap/
+
