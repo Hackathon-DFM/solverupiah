@@ -84,3 +84,8 @@ export const SEQUENCER_API_URL = process.env.SEQUENCER_API_URL;
 if (!SEQUENCER_API_URL) {
   throw new Error('SEQUENCER_API_URL is required');
 }
+
+export const PERMIT2_ADDRESS = process.env.PERMIT2_ADDRESS;
+if (!PERMIT2_ADDRESS) {
+  throw new Error('PERMIT2_ADDRESS is required');
+}
