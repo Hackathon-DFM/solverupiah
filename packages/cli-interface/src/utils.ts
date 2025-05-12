@@ -86,6 +86,17 @@ export type OnchainCrossChainOrder = {
   orderData: Address;
 };
 
+export type GaslessCrossChainOrder = {
+  originSettler: Address;
+  user: Address;
+  nonce: bigint;
+  originChainId: bigint;
+  openDeadline: number;
+  fillDeadline: number;
+  orderDataType: Address;
+  orderData: Address;
+};
+
 export type OpenEventLog = {
   eventName: 'Open';
   args: {
@@ -120,6 +131,15 @@ export type FillInstruction = {
 
 // ████ OrderEncoder ███████████████████████████████████████████████████████████
 
+// function _prepareGaslessOrder(
+//   address originSettler,
+//   address user,
+//   uint64 originChainId,
+//   bytes memory orderData,
+//   uint256 permitNonce,
+//   uint32 openDeadline,
+//   uint32 fillDeadline,
+//   bytes32 orderDataType
 export type OrderData = {
   sender: Address;
   recipient: Address;
