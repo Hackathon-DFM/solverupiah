@@ -1,0 +1,9 @@
+TRX HISTORY:
+
+Id
+Date and time
+status(open/filled?)
+hash
+amount
+tokens (from and to)
+network(origin & dest)
