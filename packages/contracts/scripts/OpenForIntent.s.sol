@@ -20,6 +20,8 @@ contract OpenForIntentScript is Script {
   uint256 constant solverPk =
     0x9df556c5b59fc38cc2fbee7db4c30d3719d7c20fd38ca788784e3b7aa2edb792;
 
+  address constant recipientAddress = 0x526B73313Cfa865A8AC4888cDf538349C9D541F4;
+
   address constant originRouterAddress =
     0x1EeaF4f3b82b4f6BbF968B2dAE9Fb60edD1b6Ede;
   address constant destinationRouterAddress =
@@ -65,63 +67,135 @@ contract OpenForIntentScript is Script {
 
     MockToken(inputTokenAddress).mint(senderAddr, 100000 ether);
     MockToken(inputTokenAddress).mint(solverAddr, 100000 ether);
-    // MockToken(outputTokenAddress).mint(solverAddr, 100000 ether);
-    // MockToken(outputTokenAddress).mint(senderAddr, 100000 ether);
 
     uint256 amount = 10 ether;
 
-    console.log(
+    console2.log(
       "Sender balance: ",
       inputToken.balanceOf(senderAddr) / 1e18
     );
-    console.log(
+    console2.log(
       "Solver balance: ",
       inputToken.balanceOf(solverAddr) / 1e18
     );
-    console.log(
+    console2.log(
         "Transfer Amount: ",
         amount / 1e18
     );
 
     // -------- Create a new order -------- //
 
+    // uint256 permitNonce = block.timestamp;
+    uint256 permitNonce = 11;
+    uint32 deadline = type(uint32).max;
 
     OrderData memory orderData = OrderData({
       sender: TypeCasts.addressToBytes32(senderAddr),
-      recipient: TypeCasts.addressToBytes32(senderAddr),
+      recipient: TypeCasts.addressToBytes32(recipientAddress),
       inputToken: TypeCasts.addressToBytes32(address(inputToken)),
       outputToken: TypeCasts.addressToBytes32(address(outputToken)),
       amountIn: amount,
       amountOut: amount,
-      senderNonce: 1,
+      senderNonce: permitNonce,
       originDomain: originChainId,
       destinationDomain: destinationChainId,
       destinationSettler: address(destinationRouter).addressToBytes32(),
-      fillDeadline: uint32(block.timestamp + 100),
+      fillDeadline: deadline,
       data: new bytes(0)
     });
 
-    // GaslessCrossChainOrder memory order = _prepareGaslessOrder(
-    //   OrderEncoder.encode(orderData),
-    //   permitNonce,
-    //   openDeadline,
-    //   orderData.fillDeadline
-    // );
-
-    uint256 permitNonce = 0;
-    uint32 openDeadline = type(uint32).max;
-    // uint32 openDeadline = uint32(block.timestamp + 10);
+    console.log("========================");
+    console.log("OrderData:");
+    console.log(
+      "Sender: ",
+      address(TypeCasts.bytes32ToAddress(orderData.sender))
+    );
+    console.log(
+      "Recipient: ",
+      address(TypeCasts.bytes32ToAddress(orderData.recipient))
+    );
+    console.log(
+      "Input Token: ",
+      address(TypeCasts.bytes32ToAddress(orderData.inputToken))
+    );
+    console.log(
+      "Output Token: ",
+      address(TypeCasts.bytes32ToAddress(orderData.outputToken))
+    );
+    console.log(
+      "Amount In: ",
+      orderData.amountIn
+    );
+    console.log(
+      "Amount Out: ",
+      orderData.amountOut
+    );
+    console.log(
+      "Sender Nonce: ",
+      orderData.senderNonce
+    );
+    console.log(
+      "Origin Domain: ",
+      orderData.originDomain
+    );
+    console.log(
+      "Destination Domain: ",
+      orderData.destinationDomain
+    );
+    console.log(
+      "Destination Settler: ",
+      address(TypeCasts.bytes32ToAddress(orderData.destinationSettler))
+    );
+    console.log(
+      "Fill Deadline: ",
+      orderData.fillDeadline
+    );
+    console.log("========================");
 
     GaslessCrossChainOrder memory order = GaslessCrossChainOrder({
       originSettler: originRouterAddress,
       user: senderAddr,
       nonce: permitNonce,
       originChainId: originChainId,
-      openDeadline: openDeadline,
+      openDeadline: deadline,
       fillDeadline: orderData.fillDeadline,
       orderDataType: OrderEncoder.orderDataType(),
       orderData: OrderEncoder.encode(orderData)
     });
+
+    console.log("========================");
+    console.log("Order:");
+    console.log(
+      "Origin Settler: ",
+      address(order.originSettler)
+    );
+    console.log(
+      "User: ",
+      address(order.user)
+    );
+    console.log(
+      "Nonce: ",
+      order.nonce
+    );
+    console.log(
+      "Origin Chain Id: ",
+      order.originChainId
+    );
+    console.log(
+      "Open Deadline: ",
+      order.openDeadline
+    );
+    console.log(
+      "Fill Deadline: ",
+      order.fillDeadline
+    );
+    console.logBytes32(
+      order.orderDataType
+    );
+    console.logBytes(
+      order.orderData
+    );
+    console.log("========================");
 
     // ----------- approve permit2 ----------- //
 
@@ -148,9 +222,15 @@ contract OpenForIntentScript is Script {
       address(inputToken),
       permitNonce,
       amount,
-      openDeadline,
+      deadline,
       senderPk
     );
+
+    console.log("========================");
+    console.log("Signature: ");
+    console.logBytes(sig);
+    console.log("========================");
+
     vm.stopBroadcast();
 
     // --------- open order for intent --------- //

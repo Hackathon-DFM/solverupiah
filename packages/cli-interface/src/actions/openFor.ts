@@ -52,7 +52,7 @@ const publicClient = createPublicClient({
 export const openForIntent = async () => {
   const { order, signature } = await createSignature();
 
-  const txHash = await publicClient.simulateContract({
+  const txHash = await walletClient.writeContract({
     address: ORIGIN_ROUTER_ADDRESS as Address,
     abi: routerAbi,
     functionName: 'openFor',

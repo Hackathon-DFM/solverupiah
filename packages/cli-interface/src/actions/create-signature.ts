@@ -91,22 +91,25 @@ const approveToken = async (
 export const createSignature = async () => {
   // swap 8 FOO to 11 BAR
   const { timestamp } = await publicClient.getBlock();
-  const permitNonce = BigInt(0);
+  // const permitNonce = timestamp;
+  const nonce = BigInt(11);
 
   const rawOrderData: OrderData = {
     sender: walletAccount.address,
     recipient: RECIPIENT_ADDRESS as Address,
     inputToken: INTOKEN_ADDRESS as Address,
     outputToken: OUTTOKEN_ADDRESS as Address,
-    amountIn: BigInt(parseUnits('10', 2)),
-    amountOut: BigInt(parseEther('20')),
-    senderNonce: timestamp,
+    amountIn: BigInt(parseEther('10')),
+    amountOut: BigInt(parseEther('10')),
+    senderNonce: nonce,
     originDomain: ORIGIN_DOMAIN,
     destinationDomain: DESTINATION_DOMAIN,
     destinationSettler: DESTINATION_ROUTER_ADDRESS as Address,
     fillDeadline: FILL_DEADLINE,
     data: '0x',
   };
+
+  console.log('rawOrderData: ', rawOrderData);
 
   const orderData: OrderData = {
     ...rawOrderData,
@@ -120,13 +123,15 @@ export const createSignature = async () => {
   const order: GaslessCrossChainOrder = {
     originSettler: ORIGIN_ROUTER_ADDRESS as Address,
     user: rawOrderData.sender,
-    nonce: permitNonce,
+    nonce: nonce,
     originChainId: BigInt(rawOrderData.originDomain),
     openDeadline: orderData.fillDeadline,
     fillDeadline: orderData.fillDeadline,
     orderDataType: OrderEncoder.orderDataType(),
     orderData: OrderEncoder.encode(orderData),
   };
+
+  console.log('order: ', order);
 
   await approveToken(
     INTOKEN_ADDRESS as Address,
@@ -190,7 +195,7 @@ export const createSignature = async () => {
             amount: BigInt(rawOrderData.amountIn),
           },
         ],
-        nonce: permitNonce,
+        nonce: nonce,
         deadline: BigInt(rawOrderData.fillDeadline),
         witness: resolvedOrder as ResolvedCrossChainOrder,
       },
