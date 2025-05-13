@@ -18,9 +18,10 @@ import {
   maxUint256,
   parseEther,
   parseUnits,
+  encodeFunctionData,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { liskSepolia } from 'viem/chains';
+import { arbitrumSepolia } from 'viem/chains';
 import {
   DESTINATION_ROUTER_ADDRESS,
   INTOKEN_ADDRESS,
@@ -38,12 +39,12 @@ import { createSignature } from './create-signature';
 const walletAccount = privateKeyToAccount(SOLVER_PK as Address);
 const walletClient = createWalletClient({
   account: walletAccount,
-  chain: liskSepolia,
+  chain: arbitrumSepolia,
   transport: http(),
 });
 
 const publicClient = createPublicClient({
-  chain: liskSepolia,
+  chain: arbitrumSepolia,
   transport: http(),
 });
 
@@ -51,7 +52,7 @@ const publicClient = createPublicClient({
 export const openForIntent = async () => {
   const { order, signature } = await createSignature();
 
-  const txHash = await walletClient.writeContract({
+  const txHash = await publicClient.simulateContract({
     address: ORIGIN_ROUTER_ADDRESS as Address,
     abi: routerAbi,
     functionName: 'openFor',

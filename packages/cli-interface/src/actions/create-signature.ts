@@ -19,9 +19,10 @@ import {
   maxUint256,
   parseEther,
   parseUnits,
+  parseSignature,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { liskSepolia } from 'viem/chains';
+import { arbitrumSepolia } from 'viem/chains';
 import {
   DESTINATION_ROUTER_ADDRESS,
   INTOKEN_ADDRESS,
@@ -37,34 +38,38 @@ import routerAbi from '../abis/Hyperlane7683.json';
 
 import { PermitBatchTransferFrom } from '@uniswap/permit2-sdk';
 
-const domain = {
-  name: 'Permit2',
-  chainId: ORIGIN_DOMAIN, // replace with actual chainId
-  verifyingContract: '0x000000000022D473030F116dDEE9F6B43aC78BA3', // mainnet Permit2 address
+type Output = {
+  token: `0x${string}` | `0x${string}`; // assumed bytes32
+  amount: bigint;
+  recipient: `0x${string}`; // assumed bytes32
+  chainId: bigint; // uint64
 };
 
-const types = {
-  PermitBatchTransferFrom: [
-    { name: 'permitted', type: 'TokenPermissions[]' },
-    { name: 'spender', type: 'address' },
-    { name: 'nonce', type: 'uint256' },
-    { name: 'deadline', type: 'uint256' },
-  ],
-  TokenPermissions: [
-    { name: 'token', type: 'address' },
-    { name: 'amount', type: 'uint160' },
-  ],
+type FillInstruction = {
+  destinationChainId: bigint; // uint64
+  destinationSettler: `0x${string}`; // bytes32
+  originData: `0x${string}`; // bytes
+};
+
+export type ResolvedCrossChainOrder = {
+  user: `0x${string}`; // address
+  originChainId: bigint; // uint64
+  openDeadline: number; // uint32
+  fillDeadline: number; // uint32
+  maxSpent: Output[];
+  minReceived: Output[];
+  fillInstructions: FillInstruction[];
 };
 
 const walletAccount = privateKeyToAccount(SENDER_PK as Address);
 const walletClient = createWalletClient({
   account: walletAccount,
-  chain: liskSepolia,
+  chain: arbitrumSepolia,
   transport: http(),
 });
 
 const publicClient = createPublicClient({
-  chain: liskSepolia,
+  chain: arbitrumSepolia,
   transport: http(),
 });
 
@@ -86,6 +91,7 @@ const approveToken = async (
 export const createSignature = async () => {
   // swap 8 FOO to 11 BAR
   const { timestamp } = await publicClient.getBlock();
+  const permitNonce = BigInt(0);
 
   const rawOrderData: OrderData = {
     sender: walletAccount.address,
@@ -114,7 +120,7 @@ export const createSignature = async () => {
   const order: GaslessCrossChainOrder = {
     originSettler: ORIGIN_ROUTER_ADDRESS as Address,
     user: rawOrderData.sender,
-    nonce: BigInt(0),
+    nonce: permitNonce,
     originChainId: BigInt(rawOrderData.originDomain),
     openDeadline: orderData.fillDeadline,
     fillDeadline: orderData.fillDeadline,
@@ -135,13 +141,6 @@ export const createSignature = async () => {
     args: [order, '0x'],
   });
 
-  const witness = await publicClient.readContract({
-    address: ORIGIN_ROUTER_ADDRESS as Address,
-    abi: routerAbi,
-    functionName: 'witnessHash',
-    args: [resolvedOrder],
-  });
-
   const getSignature = async () => {
     const signature = await walletClient.signTypedData({
       domain: {
@@ -150,18 +149,39 @@ export const createSignature = async () => {
         verifyingContract: '0x000000000022D473030F116dDEE9F6B43aC78BA3', // mainnet Permit2 address
       },
       types: {
-        PermitBatchTransferFrom: [
+        PermitBatchWitnessTransferFrom: [
           { name: 'permitted', type: 'TokenPermissions[]' },
           { name: 'spender', type: 'address' },
           { name: 'nonce', type: 'uint256' },
           { name: 'deadline', type: 'uint256' },
+          { name: 'witness', type: 'ResolvedCrossChainOrder' },
         ],
         TokenPermissions: [
           { name: 'token', type: 'address' },
-          { name: 'amount', type: 'uint160' },
+          { name: 'amount', type: 'uint256' },
+        ],
+        ResolvedCrossChainOrder: [
+          { name: 'user', type: 'address' },
+          { name: 'originChainId', type: 'uint64' },
+          { name: 'openDeadline', type: 'uint32' },
+          { name: 'fillDeadline', type: 'uint32' },
+          { name: 'maxSpent', type: 'Output[]' },
+          { name: 'minReceived', type: 'Output[]' },
+          { name: 'fillInstructions', type: 'FillInstruction[]' },
+        ],
+        Output: [
+          { name: 'token', type: 'bytes32' },
+          { name: 'amount', type: 'uint256' },
+          { name: 'recipient', type: 'bytes32' },
+          { name: 'chainId', type: 'uint64' },
+        ],
+        FillInstruction: [
+          { name: 'destinationChainId', type: 'uint64' },
+          { name: 'destinationSettler', type: 'bytes32' },
+          { name: 'originData', type: 'bytes' },
         ],
       },
-      primaryType: 'PermitBatchTransferFrom',
+      primaryType: 'PermitBatchWitnessTransferFrom',
       message: {
         spender: ORIGIN_ROUTER_ADDRESS as Address,
         permitted: [
@@ -170,16 +190,20 @@ export const createSignature = async () => {
             amount: BigInt(rawOrderData.amountIn),
           },
         ],
-        nonce: BigInt(timestamp),
+        nonce: permitNonce,
         deadline: BigInt(rawOrderData.fillDeadline),
+        witness: resolvedOrder as ResolvedCrossChainOrder,
       },
     });
     return signature;
   };
 
   const signature = await getSignature();
+  const { v, r, s } = parseSignature(signature);
 
+  console.log('resolvedOrder: ', resolvedOrder);
   console.log('signature: ', signature);
+  console.log({ v, r, s });
 
   return {
     order,

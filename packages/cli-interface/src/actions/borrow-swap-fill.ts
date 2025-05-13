@@ -130,14 +130,17 @@ export const borrowSwapFillIntent = async () => {
     contractAddress: DESTINATION_LATTEPOOL_ADDRESS as Address,
   };
 
-  const borrowResponse = await fetch(`https://baristenet-sequencer.fly.dev/borrow`, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'Content-Type': 'application/json',
+  const borrowResponse = await fetch(
+    `https://baristenet-sequencer.fly.dev/borrow`,
+    {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonStringifyBigInt(borrowRequest),
     },
-    body: jsonStringifyBigInt(borrowRequest),
-  });
+  );
 
   if (!borrowResponse.ok) {
     throw new Error(`HTTP error! status: ${borrowResponse.status}`);
